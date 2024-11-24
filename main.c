@@ -6,17 +6,18 @@
 // Function prototype for our assembly function
 extern void calculate_acceleration(double* matrix, int rows, int* results);
 
-//void calculate_acceleration(const double* matrix, const int rows, int* results) {
-//    for (int i = 0; i < rows; i++) {
-//        // Convert km/h to m/s
-//        const double v1 = matrix[i * 3] * (1000.0 / 3600.0);
-//        const double v2 = matrix[i * 3 + 1] * (1000.0 / 3600.0);
-//        const double t = matrix[i * 3 + 2];
-//
-//        // Calculate acceleration
-//        results[i] = (int)round((v2 - v1) / t);
-//    }
-//}
+// Function to calculate acceleration using C
+void calculate_acceleration_c(const double* matrix, const int rows, int* results) {
+    for (int i = 0; i < rows; i++) {
+        // Convert km/h to m/s
+        const double v1 = matrix[i * 3] * (1000.0 / 3600.0);
+        const double v2 = matrix[i * 3 + 1] * (1000.0 / 3600.0);
+        const double t = matrix[i * 3 + 2];
+
+        // Calculate acceleration
+        results[i] = (int)round((v2 - v1) / t);
+    }
+}
 
 // Helper function to generate random double between min and max
 double random_double(const double min, const double max) {
@@ -38,6 +39,8 @@ void generate_test_data(double* matrix, const int rows) {
 
 // Function to verify results
 void verify_results(const double* matrix, const int* results, const int rows) {
+    int error_count= 0;
+
     for (int i = 0; i < rows; i++) {
         // Convert km/h to m/s
         const double v1 = matrix[i * 3] * (1000.0 / 3600.0);
@@ -47,12 +50,18 @@ void verify_results(const double* matrix, const int* results, const int rows) {
         // Calculate expected acceleration
         const int expected = (int)round((v2 - v1) / t);
         if (results[i] != expected) {
+            error_count++;
+            if (error_count > 5) {
+                printf("Stopping verification due to too many errors\n");
+                return;
+            }
+
             printf("Verification failed at row %d: Expected %d, Got %d\n",
                 i, expected, results[i]);
-            return;
         }
     }
-    printf("All results verified correctly!\n");
+
+    if (error_count == 0) printf("All results verified correctly!\n");
 }
 
 int main() {
@@ -90,21 +99,35 @@ int main() {
             }
         }
 
-        const clock_t start = clock();
+        clock_t start = clock();
         calculate_acceleration(matrix, y, results);
-        const clock_t end = clock();
+        clock_t end = clock();
 
-        const double time_taken = ((double)(end - start)) / CLOCKS_PER_SEC * 1e9; // Convert to nanoseconds
+        double time_taken = ((double)(end - start)) / CLOCKS_PER_SEC * 1e9; // Convert to nanoseconds
 
-        printf("\nCalculated accelerations are:\n");
+        printf("\n");
+
+        verify_results(matrix, results, y);
+        printf("Calculated accelerations are:\n");
         for (int i = 0; i < y; i++) {
             printf("%d m/s^2\n", results[i]);
         }
 
-        printf("\nExecution time: %lf nanoseconds\n\n", time_taken);
+        printf("\nExecution time using ASM: %lf nanoseconds\n", time_taken);
+
+		start = clock();
+		calculate_acceleration_c(matrix, y, results);
+		end = clock();
+
+		time_taken = ((double)(end - start)) / CLOCKS_PER_SEC * 1e9; // Convert to nanoseconds
+
+        printf("Execution time using C: %lf nanoseconds\n\n", time_taken);
 
         free(matrix);
         free(results);
+
+		// Clear input buffer
+        while (getchar() != '\n');
     }
 
     // Ask user if they want to run the tests
@@ -129,7 +152,8 @@ int main() {
             return 1;
         }
 
-        double total_time = 0.0;
+        double total_time_asm = 0.0;
+		double total_time_c = 0.0;
 
         printf("\nTesting with %d rows:\n", rows);
 
@@ -139,12 +163,12 @@ int main() {
             generate_test_data(matrix, rows);
 
             // Time the assembly function
-            const clock_t start = clock();
+            clock_t start = clock();
             calculate_acceleration(matrix, rows, results);
-            const clock_t end = clock();
+            clock_t end = clock();
 
-            const double time_taken = ((double)(end - start)) / CLOCKS_PER_SEC * 1e9; // Convert to nanoseconds
-            total_time += time_taken;
+            double time_taken = ((double)(end - start)) / CLOCKS_PER_SEC * 1e9; // Convert to nanoseconds
+            total_time_asm += time_taken;
 
             // Verify results on first run
             if (run == 0) {
@@ -156,10 +180,20 @@ int main() {
                         matrix[i * 3 + 2], results[i]);
                 }
             }
+
+            // Time the C function
+            start = clock();
+            calculate_acceleration_c(matrix, rows, results);
+            end = clock();
+
+            time_taken = ((double)(end - start)) / CLOCKS_PER_SEC * 1e9; // Convert to nanoseconds
+            total_time_c += time_taken;
         }
 
-        printf("Average execution time: %lf nanoseconds\n",
-            total_time / num_runs);
+        printf("Average execution time using ASM: %lf nanoseconds\n",
+            total_time_asm / num_runs);
+		printf("Average execution time using C: %lf nanoseconds\n",
+			total_time_c / num_runs);
 
         free(matrix);
         free(results);
