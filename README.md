@@ -61,6 +61,11 @@ The program was tested with different input sizes (10, 100, 1000, 10000 rows), w
 
 ![Screenshot 2024-11-25 000609](https://github.com/user-attachments/assets/be55e315-10ab-4828-8965-05e60d89f811)
 
+1. The result in each row in a test case is verified.
+   - If there are inconsistencies, the following message is displayed: ```Verification failed at row X: Expected val_1, Got val_2```
+   - If there are none, the following is shown instead: ```All results verified correctly!```
+2. Only the first five errors in a test case are shown; if there are, the rest are truncated in the display.
+
 ## Usage
 
 1. Download the source code and open the Visual Studio solution file
@@ -84,6 +89,7 @@ The program was tested with different input sizes (10, 100, 1000, 10000 rows), w
 
 ## Build Requirements
 
+- Visual Studio
 - x86-64 compatible processor
 - NASM assembler
 - C compiler with C11 support
