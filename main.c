@@ -1,10 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <windows.h>
 #include <time.h>
 #include <math.h>
 
+#define MULTIPLIER 1e9
+
 // Function prototype for our assembly function
-extern void calculate_acceleration(double* matrix, int rows, int* results);
+extern void calculate_acceleration(const double* matrix, const int rows, int* results);
 
 // Function to calculate acceleration using C
 void calculate_acceleration_c(const double* matrix, const int rows, int* results) {
@@ -39,7 +42,7 @@ void generate_test_data(double* matrix, const int rows) {
 
 // Function to verify results
 void verify_results(const double* matrix, const int* results, const int rows) {
-    int error_count= 0;
+    int error_count = 0;
 
     for (int i = 0; i < rows; i++) {
         // Convert km/h to m/s
@@ -64,8 +67,18 @@ void verify_results(const double* matrix, const int* results, const int rows) {
     if (error_count == 0) printf("All results verified correctly!\n");
 }
 
+// Function to measure execution time using QueryPerformanceCounter
+double measure_execution_time(void (*function)(const double*, const int, int*), const double* matrix, const int rows, int* results) {
+    LARGE_INTEGER frequency, start, end;
+    QueryPerformanceFrequency(&frequency);
+    QueryPerformanceCounter(&start);
+    function(matrix, rows, results);
+    QueryPerformanceCounter(&end);
+    return (double)(end.QuadPart - start.QuadPart) * MULTIPLIER / (double)frequency.QuadPart; // Time in nanoseconds (MULTIPLIER-dependent)
+}
+
 int main() {
-    srand(time(NULL));
+    srand((unsigned int)time(NULL));
     const int test_sizes[] = { 10, 100, 1000, 10000 };
     const int num_sizes = sizeof(test_sizes) / sizeof(test_sizes[0]);
 
@@ -78,9 +91,9 @@ int main() {
         y = strtol(buffer, NULL, 10);
     }
 
-	if (y <= 0) {
+    if (y <= 0) {
         printf("Invalid number of rows. Must be greater than 0.\n\n");
-	}
+    }
 
     if (y > 0) {
         double* matrix = malloc(y * 3 * sizeof(double));
@@ -99,11 +112,7 @@ int main() {
             }
         }
 
-        clock_t start = clock();
-        calculate_acceleration(matrix, y, results);
-        clock_t end = clock();
-
-        double time_taken = ((double)(end - start)) / CLOCKS_PER_SEC * 1e9; // Convert to nanoseconds
+        const double asm_time = measure_execution_time(calculate_acceleration, matrix, y, results);
 
         printf("\n");
 
@@ -113,20 +122,15 @@ int main() {
             printf("%d m/s^2\n", results[i]);
         }
 
-        printf("\nExecution time using ASM: %lf nanoseconds\n", time_taken);
+        printf("\nExecution time using ASM: %lf nanoseconds\n", asm_time);
 
-		start = clock();
-		calculate_acceleration_c(matrix, y, results);
-		end = clock();
-
-		time_taken = ((double)(end - start)) / CLOCKS_PER_SEC * 1e9; // Convert to nanoseconds
-
-        printf("Execution time using C: %lf nanoseconds\n\n", time_taken);
+        const double c_time = measure_execution_time(calculate_acceleration_c, matrix, y, results);
+        printf("Execution time using C: %lf nanoseconds\n\n", c_time);
 
         free(matrix);
         free(results);
 
-		// Clear input buffer
+        // Clear input buffer
         while (getchar() != '\n');
     }
 
@@ -153,7 +157,7 @@ int main() {
         }
 
         double total_time_asm = 0.0;
-		double total_time_c = 0.0;
+        double total_time_c = 0.0;
 
         printf("\nTesting with %d rows:\n", rows);
 
@@ -163,12 +167,8 @@ int main() {
             generate_test_data(matrix, rows);
 
             // Time the assembly function
-            clock_t start = clock();
-            calculate_acceleration(matrix, rows, results);
-            clock_t end = clock();
-
-            double time_taken = ((double)(end - start)) / CLOCKS_PER_SEC * 1e9; // Convert to nanoseconds
-            total_time_asm += time_taken;
+            const double asm_time = measure_execution_time(calculate_acceleration, matrix, rows, results);
+            total_time_asm += asm_time;
 
             // Verify results on first run
             if (run == 0) {
@@ -182,18 +182,14 @@ int main() {
             }
 
             // Time the C function
-            start = clock();
-            calculate_acceleration_c(matrix, rows, results);
-            end = clock();
-
-            time_taken = ((double)(end - start)) / CLOCKS_PER_SEC * 1e9; // Convert to nanoseconds
-            total_time_c += time_taken;
+            const double c_time = measure_execution_time(calculate_acceleration_c, matrix, rows, results);
+            total_time_c += c_time;
         }
 
         printf("Average execution time using ASM: %lf nanoseconds\n",
             total_time_asm / num_runs);
-		printf("Average execution time using C: %lf nanoseconds\n",
-			total_time_c / num_runs);
+        printf("Average execution time using C: %lf nanoseconds\n",
+            total_time_c / num_runs);
 
         free(matrix);
         free(results);
