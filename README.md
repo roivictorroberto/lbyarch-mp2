@@ -2,7 +2,7 @@
 
 This program calculates the acceleration of vehicles based on initial velocity, final velocity, and time using both C and x86-64 Assembly implementations. The program demonstrates the performance benefits of assembly optimization for numerical computations.
 
-#### <I> The video demo for our group can be accessed in this [Google Drive](https://drive.google.com/file/d/1z0xOglCtpH92wrGmcC5Z3yWRD0olXClF/view?usp=sharing). </i>
+#### <I> The demo video for our group can be accessed in this [Google Drive](https://drive.google.com/file/d/1z0xOglCtpH92wrGmcC5Z3yWRD0olXClF/view?usp=sharing). </i>
 
 ## Members
 - Roi Victor Roberto
