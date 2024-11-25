@@ -65,6 +65,7 @@ The program was tested with different input sizes (10, 100, 1000, 10000 rows), w
    - If there are inconsistencies, the following message is displayed: ```Verification failed at row X: Expected val_1, Got val_2```
    - If there are none, the following is shown instead: ```All results verified correctly!```
 2. Only the first five errors in a test case are shown; if there are, the rest are truncated in the display.
+3. The output of the first five rows is also displayed.
 
 ## Usage
 
